@@ -1,72 +1,78 @@
-import React from 'react';
-import ReactECharts from 'echarts-for-react';
-import styled from 'styled-components';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import ReactECharts from "echarts-for-react";
 
-const LineChart = () => {
-  const options = {
-    title: {
-      text: 'Hash Coin price in last 7 days',
-      textStyle: {
-        color: '#fff', // Title text color
-        fontSize: 15,
-      },
-    },
-    tooltip: {
-      trigger: 'axis',
-      show: false, // Disable tooltips
-    },
+type State = {
+  price: number[];
+  date: string[];
+};
+
+function Chart() {
+  const [state, setState] = useState<State>({
+    price: [],
+    date: [],
+  });
+
+  useEffect(() => {
+    const fetchHashData = async () => {
+      try {
+        const response = await axios.get(
+          "https://hash-miner-backend.vercel.app/api/auth/get-prices?period=3m"
+        );
+        const date = response.data.prices.map(
+          (item: { date: string }) => item.date
+        );
+        const price = response.data.prices.map(
+          (item: { price: number }) => item.price
+        );
+        setState((prev) => ({ ...prev, price, date }));
+      } catch (error) {
+        console.error("Error fetching coin data:", error);
+      }
+    };
+
+    fetchHashData();
+  }, []);
+
+  useEffect(() => {
+    console.log({ state });
+  }, [state]);
+  const option = {
     xAxis: {
-      type: 'category',
-      data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      axisLabel: {
-        color: '#fff', // X-axis labels color
-      },
-      axisLine: {
-        lineStyle: {
-          color: '#fff', // X-axis line color
-        },
-      },
+      type: "category",
+      data: state.date,
     },
     yAxis: {
-      type: 'value',
-      axisLabel: {
-        color: '#fff', // Y-axis labels color
-      },
+      type: "value",
       axisLine: {
-        lineStyle: {
-          color: '#fff', // Y-axis line color
-        },
+        show: true,
       },
       splitLine: {
-        lineStyle: {
-          color: '#444', // Y-axis split line color
-        },
+        show: false,
       },
+    },
+    grid: {
+      top: "5%",
+      bottom: "15%",
     },
     series: [
       {
-        data: [10, 20, 30, 25, 35, 60, 55],
-        type: 'line',
-        smooth: true,
-        lineStyle: {
-          color: '#00FF00', // Line color (green in this case)
-        },
+        data: state.price,
+        type: "line",
         itemStyle: {
-          color: '#00FF00', // Points color
+          color: "limegreen",
         },
-        areaStyle: {
-          color: 'rgba(0, 255, 0, 0.2)', // Area under the line color
+        lineStyle: {
+          color: "limegreen",
         },
+        symbol: "none",
       },
     ],
   };
 
-  return <StyledChart option={options} />;
-};
+  return (
+    <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+  );
+}
 
-const StyledChart = styled(ReactECharts)`
-height: 50%;
-width: 80%;
-`;
-
-export default LineChart;
+export default Chart;

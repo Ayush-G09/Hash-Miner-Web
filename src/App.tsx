@@ -1,168 +1,172 @@
-import { useRef } from 'react';
-import circle from './assets/circle.png';
-import mininggif from './assets/200w.gif';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import work from './assets/work.gif';
-import LineChart from './chart';
+import logo from './assets/logo.png';
+import Chart from './Chart';
+
+type CoinsData = {
+  name: string;
+  symbol: string;
+  price: number;
+  change: number;
+  image: string;
+};
+
+type State = {
+  bitcoin: CoinsData;
+  ethereum: CoinsData;
+  bnb: CoinsData;
+  xrp: CoinsData;
+  solana: CoinsData;
+  hashcoin: CoinsData;
+};
 
 function App() {
-  const miningRef = useRef<HTMLDivElement>(null);
-  const workRef = useRef<HTMLDivElement>(null);
-  const coinRef = useRef<HTMLDivElement>(null);
-  const supportRef = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState<State>({
+    bitcoin: {} as CoinsData,
+    ethereum: {} as CoinsData,
+    bnb: {} as CoinsData,
+    xrp: {} as CoinsData,
+    solana: {} as CoinsData,
+    hashcoin: {
+      name: 'Hashcoin',
+      symbol: 'hsc',
+      price: 0,
+      change: 0,
+      image: logo,
+    },
+  });
 
-  const handleMiningClick = () => {
-    if (miningRef.current) {
-      miningRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  useEffect(() => {
+    const fetchCoinsData = async () => {
+      try {
+        const response = await axios.get(
+          "https://api.coingecko.com/api/v3/simple/price",
+          {
+            params: {
+              ids: "bitcoin,ethereum,binancecoin,ripple,solana",
+              vs_currencies: "usd",
+              include_market_cap: false,
+              include_24hr_change: true,
+              include_last_updated_at: false,
+            },
+          }
+        );
 
-  const handleWorkClick = () => {
-    if (workRef.current) {
-      workRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+        setState((prev) => ({...prev, 
+          bitcoin: {
+            name: "Bitcoin",
+            symbol: "BTC",
+            price: response.data.bitcoin.usd,
+            change: response.data.bitcoin.usd_24h_change,
+            image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+          },
+          ethereum: {
+            name: "Ethereum",
+            symbol: "ETH",
+            price: response.data.ethereum.usd,
+            change: response.data.ethereum.usd_24h_change,
+            image: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+          },
+          bnb: {
+            name: "Binance Coin",
+            symbol: "BNB",
+            price: response.data.binancecoin.usd,
+            change: response.data.binancecoin.usd_24h_change,
+            image: "https://assets.coingecko.com/coins/images/825/large/binance-coin-logo.png",
+          },
+          xrp: {
+            name: "XRP",
+            symbol: "XRP",
+            price: response.data.ripple.usd,
+            change: response.data.ripple.usd_24h_change,
+            image: "https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png",
+          },
+          solana: {
+            name: "Solana",
+            symbol: "SOL",
+            price: response.data.solana.usd,
+            change: response.data.solana.usd_24h_change,
+            image: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+          },
+        }));
+      } catch (error) {
+        console.error("Error fetching coin data:", error);
+      }
+    };
 
-  const handleCoinClick = () => {
-    if (coinRef.current) {
-      coinRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+    const fetchHashData = async () => {
+      try {
+        const response = await axios.get("https://hash-miner-backend.vercel.app/api/auth/get-prices?period=1w");
+        const length = response.data.prices.length;
+        const change = (response.data.prices[length-1].price - response.data.prices[length-2].price)/response.data.prices[length-2].price*100;
+        setState((prev) => ({...prev, hashcoin: {...prev.hashcoin, price: response.data.prices[length-3].price, change: change}}));
+      } catch (error) {
+        console.error("Error fetching coin data:", error);
+      }
+    };
 
-  const handleSupportClick = () => {
-    if (supportRef.current) {
-      supportRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+    fetchHashData();
+    fetchCoinsData();
+  }, []);
 
   return (
     <HashMiner>
-      <Header>
-        <LogoContainer>
-          <img src='https://cdn.prod.website-files.com/64199d190fc7afa82666d89c/6603c4ea5a43b51c5132b71e_Web_Crypto_Digital_Assets_1108x1174_hero_image.webp' />
-          <Label>HashMiner</Label>
-        </LogoContainer>
-        <NavLinks>
-          <NavLink onClick={handleMiningClick}>Easy Mining</NavLink>
-          <NavLink onClick={handleWorkClick}>How it works</NavLink>
-          <NavLink onClick={handleCoinClick}>Hash Coin</NavLink>
-          <NavLink onClick={handleSupportClick}>Support</NavLink>
-        </NavLinks>
-        <DownloadLink style={{marginLeft: 'auto'}}>Download Apk</DownloadLink>
-      </Header>
-
-      <ContentWrapper $flip={false} style={{height: '93vh'}}>
-        <LeftContent>
-          <MainTitle>Mine. Earn. Exchange – The Future of Virtual Wealth.</MainTitle>
-          <SubTitle>
-            HashMiner is your gateway to the digital mining revolution. Buy a virtual
-            mining rig, start mining HashCoins, and effortlessly exchange them for real
-            money. Experience the power of mining made simple, secure, and rewarding!
-          </SubTitle>
-        </LeftContent>
-        <ImageContainer>
-          <img src={circle} />
-        </ImageContainer>
-      </ContentWrapper>
-
-      <ContentWrapper $flip={true} ref={miningRef}>
-        <ImageContainer>
-          <img src={mininggif} style={{width: '60%'}} />
-        </ImageContainer>
-        <RightContent>
-          <SectionTitle>Easy Mining</SectionTitle>
-          <Description>
-            At HashMiner, we’ve revolutionized the way mining works by making it simple,
-            efficient, and accessible for everyone. Forget about expensive hardware,
-            complicated setups, or high electricity costs. With just a few clicks, you can
-            purchase a virtual mining rig and begin your journey into the world of
-            cryptocurrency mining.
-            <br />
-            <br />
-            Our intuitive interface and streamlined process ensure that even first-time users
-            can start earning HashCoins effortlessly. Whether you're a tech enthusiast or just
-            looking for a way to generate passive income, HashMiner makes mining easy, fun, and
-            rewarding.
-          </Description>
-        </RightContent>
-      </ContentWrapper>
-
-      <ContentWrapper $flip={false} ref={workRef}>
-        <LeftContent>
-          <SectionTitle>How It Works</SectionTitle>
-          <Description>
-            <strong>Purchase Your Virtual Rig:</strong> Select from a range of virtual mining rigs,
-            each tailored to meet your mining goals and budget. From beginner-friendly rigs to
-            advanced options for serious miners, there’s something for everyone.
-            <br />
-            <br />
-            <strong>Start Mining:</strong> Once your rig is active, it gets to work immediately,
-            generating HashCoins 24/7. Monitor your mining progress in real-time through our
-            user-friendly dashboard.
-            <br />
-            <br />
-            <strong>Exchange Your HashCoins:</strong> Convert your mined HashCoins into real money
-            with just a few taps. We’ve partnered with secure payment gateways to ensure fast and
-            reliable transactions.
-            <br />
-            <br />
-            With HashMiner, mining isn’t just a process—it’s an experience designed to maximize
-            your rewards with minimal effort.
-          </Description>
-        </LeftContent>
-        <ImageContainer>
-          <img src={work} style={{width: '70%'}} />
-        </ImageContainer>
-      </ContentWrapper>
-
-      <ContentWrapper $flip={true} ref={coinRef}>
-        <ImageContainer>
-          <LineChart/>
-        </ImageContainer>
-        <RightContent>
-          <SectionTitle>Hash Coin</SectionTitle>
-          <Description>
-            HashCoin is the heart of the HashMiner ecosystem. Earned through virtual mining,
-            HashCoin represents your hard work and dedication. It’s not just a virtual currency;
-            it’s a bridge between the digital and real worlds.
-            <br />
-            <br />
-            Every HashCoin you mine can be exchanged for real money, making it a tangible and
-            rewarding achievement. Our system ensures that HashCoins are secure, trackable, and
-            easy to manage. As you mine, you’ll watch your balance grow and your goals come
-            closer to reality.
-            <br />
-            <br />
-            With HashCoin, you’re not just mining—you’re building a sustainable and profitable
-            future in the world of virtual finance.
-          </Description>
-        </RightContent>
-      </ContentWrapper>
-
-      <ContentWrapper $flip={false} ref={supportRef}>
-        <LeftContent>
-          <SectionTitle>Support</SectionTitle>
-          <Description>
-            We believe in providing a seamless experience, and that extends to our support
-            system. Whether you have a question about setting up your rig, need help with your
-            mining progress, or want to learn more about exchanging HashCoins, our 24/7 support
-            team is here to assist you. You can reach us anytime at{' '}
-            <ContactEmail>hashminerinfo@gmail.com</ContactEmail> for prompt assistance.
-            <br />
-            <br />
-            Getting started is simple! Download the APK today to unlock the full potential of
-            HashMiner. Experience hassle-free mining, intuitive navigation, and a suite of features
-            designed to make mining as enjoyable as it is profitable.
-            <br />
-            <br />
-            Join thousands of satisfied users and take your first step into the future of mining.
-            With HashMiner, your mining journey is just a tap away.
-          </Description>
-        </LeftContent>
-        <ImageContainer>
-          <img src={circle} />
-        </ImageContainer>
-      </ContentWrapper>
+      <div style={{width: '100%', minHeight: '7vh', display: 'flex', alignItems: 'center', boxSizing: 'border-box', padding: '0 1rem'}}>
+        <label style={{fontSize: '1.2rem', fontWeight: 'bold', color: '#F0B90B'}}>HashMiner</label>
+      </div>
+      <div style={{width: '100%', minHeight: '93vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 1rem', boxSizing: 'border-box'}}>
+        <div style={{width: '100%', height: '100%', display: 'flex', alignItems: 'start', justifyContent: 'center', boxSizing: 'border-box', padding: '3rem'}}>
+          <div style={{width: '50%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'start', justifyContent: 'center', gap: '1rem'}}>
+            <label style={{fontSize: '3.5rem', fontWeight: 'bold', color: 'white'}}>Empowering <span style={{color: '#F0B90B'}}>Millions</span> Around the Globe</label>
+            <label style={{fontSize: '1.8rem'}}>✅ Your Trusted Partner In Virtual Mining</label>
+            <div style={{padding: '0.5rem 2rem', marginTop: '6rem', fontSize: '1.5rem', fontWeight: 500, color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0B90B', borderRadius: '5px', boxShadow: '0px 0px 5px 0px rgba(0, 0, 0, 0.5)', cursor: 'pointer'}}>Download</div>
+          </div>
+          <div style={{width: '50%', height: '100%', gap: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+            <div style={{width: '70%', boxSizing: 'border-box', padding: '0.5rem 1rem', backgroundColor: '#1E2329', borderRadius: '10px', boxShadow: '0px 0px 5px 0px rgba(0, 0, 0, 0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
+              {Object.values(state).map((coin) => (
+                <div key={coin.name} style={{width: '100%', padding: '0.5rem 0', display: 'flex', alignItems: 'start'}}>
+                  <div style={{width: '60%', display: 'flex'}}>
+                    <img src={coin.image} width='30px' />      
+                    <label style={{color: 'white', fontSize: '1rem', fontWeight: 500, marginLeft: '10px'}}>{coin.symbol}</label>
+                    <label style={{fontSize: '0.8rem', marginLeft: '5px'}}>{coin.name}</label>
+                  </div>
+                  <label style={{color: 'white', fontSize: '1rem', fontWeight: 500, width: '30%'}}>${coin.price}</label>
+                  <label style={{width: '15%', textAlign: 'end', fontSize: '1rem', fontWeight: 500, color: coin.change < 0 ? 'crimson' : 'limegreen'}}>{(coin.change)?.toFixed(2)}%</label>
+                </div>
+              ))}
+            </div>
+            <div style={{width: '70%', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', padding: '1rem', backgroundColor: '#1E2329', borderRadius: '10px', boxShadow: '0px 0px 5px 0px rgba(0, 0, 0, 0.5)'}}>
+              <Chart/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{width: '100vw', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', boxSizing: 'border-box', padding: '1rem'}}>
+        <div style={{display: 'flex', alignItems: 'start', justifyContent: 'center', gap: '10%', marginTop: '5%'}}>
+          <div style={{width: '38%', display: 'flex', flexDirection: 'column'}}>
+            <label style={{fontSize: '2rem', color: '#F0B90B', fontWeight: 'bold'}}>How It Works</label>
+            <label>Purchase Your Virtual Rig: Select from a range of virtual mining rigs, each tailored to meet your mining goals and budget. From beginner-friendly rigs to advanced options for serious miners, there’s something for everyone.
+<br/><br/>Start Mining: Once your rig is active, it gets to work immediately, generating HashCoins 24/7. Monitor your mining progress in real-time through our user-friendly dashboard.
+<br/><br/>Exchange Your HashCoins: Convert your mined HashCoins into real money with just a few taps. We’ve partnered with secure payment gateways to ensure fast and reliable transactions.
+<br/><br/>With HashMiner, mining isn’t just a process—it’s an experience designed to maximize your rewards with minimal effort.
+            </label>
+          </div>
+          <div style={{width: '38%', display: 'flex', flexDirection: 'column'}}>
+            <label style={{fontSize: '2rem', color: '#F0B90B', fontWeight: 'bold'}}>Easy Mining</label>
+            <label>At HashMiner, we’ve revolutionized the way mining works by making it simple, efficient, and accessible for everyone. Forget about expensive hardware, complicated setups, or high electricity costs. With just a few clicks, you can purchase a virtual mining rig and begin your journey into the world of cryptocurrency mining.<br/><br/>Our intuitive interface and streamlined process ensure that even first-time users can start earning HashCoins effortlessly. Whether you're a tech enthusiast or just looking for a way to generate passive income, HashMiner makes mining easy, fun, and rewarding.</label>
+          </div>
+        </div>
+        <div style={{width: '100%', display: 'flex', boxSizing: 'border-box', padding: '1rem'}}>
+          <div style={{width: '70%', display: 'flex', flexDirection: 'column'}}>
+            <label style={{fontSize: '1.2rem', color: '#F0B90B', fontWeight: 'bold'}}>Support</label>
+            <label>We believe in providing a seamless experience, and that extends to our support system. Whether you have a question about setting up your rig, need help with your mining progress, or want to learn more about exchanging HashCoins, our 24/7 support team is here to assist you. You can reach us anytime at hashminerinfo@gmail.com for prompt assistance.</label>
+          </div>
+          <div style={{width: '30%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            <div style={{padding: '0.5rem 2rem', fontSize: '1.5rem', fontWeight: 500, color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0B90B', borderRadius: '5px', boxShadow: '0px 0px 5px 0px rgba(0, 0, 0, 0.5)', cursor: 'pointer'}}>Download</div>
+          </div>
+        </div>
+      </div>
     </HashMiner>
   );
 }
@@ -170,7 +174,7 @@ function App() {
 const HashMiner = styled.div`
   width: 100vw;
   height: 100vh;
-  background-color: black;
+  background-color: #181A20;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -184,175 +188,6 @@ const HashMiner = styled.div`
   &::-webkit-scrollbar {
     display: none;
   }
-
-  @media (min-width: 1440px) {
-    scroll-snap-type: y mandatory;
-    scroll-behavior: smooth;
-
-    > * {
-      scroll-snap-align: start;
-    }
-  }
-`;
-
-const Header = styled.div`
-  width: 100%;
-  min-height: 7%;
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 0 20px;
-  box-sizing: border-box;
-  z-index: 100;
-  background-color: black;
-  margin-bottom: 5%;
-
-  @media (min-width: 1440px) {
-    position: fixed;
-    margin-bottom: 0%;
-  }
-`;
-
-const LogoContainer = styled.div`
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 0.5rem;
-  
-  img {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-  }
-`;
-
-const Label = styled.label`
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: rgba(225, 225, 225, 0.7);
-`;
-
-const NavLinks = styled.div`
-  display: none;
-  gap: 1.5rem;
-  margin-left: 10%;
-
-  @media (min-width: 1440px) {
-    display: flex;
-  }
-`;
-
-const NavLink = styled.label`
-  font-size: 1rem;
-  font-weight: 400;
-  cursor: pointer;
-`;
-
-const DownloadLink = styled.label`
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(225, 225, 225, 0.7);
-  margin-left: auto;
-  cursor: pointer;
-`;
-
-const ContentWrapper = styled.div<{$flip: boolean}>`
-  width: 100vw;
-  min-height: fit-content;
-  display: flex;
-  flex-direction: ${(p) => p.$flip ? 'column-reverse' : 'column'};
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  overflow: hidden;
-
-  @media (min-width: 1440px) {
-    flex-direction: row;
-    min-height: 100vh;
-  }
-`;
-
-const LeftContent = styled.div`
-  width: 95%;
-  height: fit-content;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  padding-left: 0rem;
-  gap: 2rem;
-  overflow: hidden;
-
-  @media (min-width: 1440px) {
-    width: 50%;
-    height: 100%;
-    padding-left: 6rem;
-  }
-`;
-
-const RightContent = styled.div`
-  width: 95%;
-  height: fit-content;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  padding-right: 0rem;
-  gap: 2rem;
-  overflow: hidden;
-
-  @media (min-width: 1440px) {
-    width: 50%;
-    height: 100%;
-    padding-right: 6rem;
-  }
-`;
-
-const ImageContainer = styled.div`
-  width: 95%;
-  height: 40vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    filter: blur(2px);
-  }
-
-  @media (min-width: 1440px) {
-    width: 50%;
-    height: 100%;
-  }
-`;
-
-const SectionTitle = styled.label`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: rgba(225, 225, 225, 0.7);
-`;
-
-const MainTitle = styled.label`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: rgba(225, 225, 225, 0.7);
-`;
-
-const SubTitle = styled.label`
-  font-size: 1rem;
-  font-weight: 400;
-`;
-
-const Description = styled.label`
-  font-size: 1rem;
-  font-weight: 400;
-  color: rgba(225, 225, 225, 0.9);
-  line-height: 1.5;
-`;
-
-const ContactEmail = styled.span`
-  color: #00f;
 `;
 
 export default App;
